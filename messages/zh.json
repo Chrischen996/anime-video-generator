@@ -1,0 +1,191 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "save": "保存",
+    "close": "关闭",
+    "delete": "删除",
+    "edit": "编辑",
+    "download": "下载",
+    "upload": "上传",
+    "generate": "生成",
+    "retry": "重试",
+    "clear": "清除",
+    "remove": "移除",
+    "settings": "设置",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "confirm": "确认",
+    "yes": "是",
+    "no": "否"
+  },
+  "header": {
+    "title": "动漫视频生成器",
+    "generate": "生成",
+    "gallery": "画廊"
+  },
+  "navigation": {
+    "generate": "生成",
+    "gallery": "画廊",
+    "settings": "设置"
+  },
+  "generator": {
+    "title": "生成动漫视频",
+    "generationType": {
+      "label": "生成类型",
+      "textToVideo": "文本转视频",
+      "imageToVideo": "图片转视频"
+    },
+    "prompt": {
+      "label": "提示词",
+      "placeholder": "描述您想要生成的动漫视频...",
+      "helperText": "请详细描述角色、动作、风格和场景以获得最佳效果"
+    },
+    "imageUpload": {
+      "label": "上传图片",
+      "dragDrop": "点击上传或拖拽文件",
+      "fileTypes": "支持 PNG、JPG、WEBP、GIF 格式，最大 {maxSize}MB",
+      "removeFile": "移除文件"
+    },
+    "model": {
+      "label": "模型",
+      "fal": "Fal.ai（快速）",
+      "doubao": "豆包 Seedance（高质量）"
+    },
+    "resolution": {
+      "label": "分辨率",
+      "480p": "480p（轻量版）",
+      "720p": "720p（轻量版）",
+      "1080p": "1080p（专业版）"
+    },
+    "duration": {
+      "label": "时长",
+      "5s": "5秒",
+      "10s": "10秒"
+    },
+    "aspectRatio": {
+      "label": "宽高比",
+      "16:9": "16:9（横屏）",
+      "9:16": "9:16（竖屏）",
+      "1:1": "1:1（方形）"
+    },
+    "generateButton": "生成视频",
+    "generating": "生成中...",
+    "progress": {
+      "preparing": "准备生成中...",
+      "processing": "处理视频中...",
+      "finalizing": "完成中..."
+    },
+    "errors": {
+      "title": "生成错误",
+      "promptRequired": "请输入提示词",
+      "imageRequired": "图片转视频需要上传图片",
+      "apiKeyRequired": "需要API密钥",
+      "generationFailed": "视频生成失败，请重试",
+      "networkError": "网络错误，请检查网络连接",
+      "invalidFile": "无效的文件类型，请上传图片文件",
+      "fileTooLarge": "文件过大，最大支持 {maxSize}MB"
+    },
+    "warnings": {
+      "apiKeyRequired": {
+        "title": "需要API密钥",
+        "message": "请在设置中配置您的 Fal.ai API 密钥以生成视频。"
+      }
+    }
+  },
+  "videoPlayer": {
+    "noVideo": {
+      "title": "尚未生成视频",
+      "message": "生成您的第一个动漫视频以在此处查看。"
+    },
+    "controls": {
+      "play": "播放",
+      "pause": "暂停",
+      "mute": "静音",
+      "unmute": "取消静音",
+      "fullscreen": "全屏",
+      "exitFullscreen": "退出全屏",
+      "download": "下载视频"
+    },
+    "downloading": "下载中...",
+    "info": {
+      "resolution": "分辨率",
+      "duration": "时长",
+      "aspectRatio": "宽高比",
+      "createdAt": "创建时间"
+    }
+  },
+  "gallery": {
+    "title": "视频画廊",
+    "empty": {
+      "title": "画廊中没有视频",
+      "message": "生成您的第一个动漫视频以在此处查看。"
+    },
+    "videoCount": "已生成 {count} 个视频",
+    "videoCount_plural": "已生成 {count} 个视频",
+    "sortBy": {
+      "label": "排序方式",
+      "newest": "最新优先",
+      "oldest": "最旧优先"
+    },
+    "filterBy": {
+      "label": "筛选方式",
+      "all": "所有视频",
+      "textToVideo": "文本转视频",
+      "imageToVideo": "图片转视频"
+    },
+    "actions": {
+      "clearAll": "清除所有视频",
+      "confirmClear": "确定要删除所有视频吗？此操作无法撤销。"
+    }
+  },
+  "settings": {
+    "title": "设置",
+    "apiKeys": {
+      "title": "API 密钥",
+      "falai": {
+        "label": "Fal.ai API 密钥",
+        "placeholder": "输入您的 Fal.ai API 密钥",
+        "helperText": "使用 Fal.ai 模型生成视频时必需",
+        "validate": "验证密钥",
+        "validating": "验证中...",
+        "valid": "API 密钥有效",
+        "invalid": "无效的 API 密钥"
+      },
+      "doubao": {
+        "label": "豆包 API 密钥",
+        "placeholder": "输入您的豆包 API 密钥",
+        "helperText": "使用豆包 Seedance 模型生成视频时必需",
+        "validate": "验证密钥",
+        "validating": "验证中...",
+        "valid": "API 密钥有效",
+        "invalid": "无效的 API 密钥"
+      }
+    },
+    "defaults": {
+      "title": "默认生成设置",
+      "model": "默认模型",
+      "resolution": "默认分辨率",
+      "duration": "默认时长",
+      "aspectRatio": "默认宽高比"
+    },
+    "language": {
+      "title": "语言",
+      "label": "界面语言",
+      "english": "English",
+      "chinese": "中文"
+    },
+    "actions": {
+      "save": "保存设置",
+      "cancel": "取消"
+    }
+  },
+  "languageSwitcher": {
+    "label": "语言",
+    "english": "English",
+    "chinese": "中文"
+  }
+}

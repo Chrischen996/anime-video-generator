@@ -1,0 +1,191 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "download": "Download",
+    "upload": "Upload",
+    "generate": "Generate",
+    "retry": "Retry",
+    "clear": "Clear",
+    "remove": "Remove",
+    "settings": "Settings",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "header": {
+    "title": "Anime Video Generator",
+    "generate": "Generate",
+    "gallery": "Gallery"
+  },
+  "navigation": {
+    "generate": "Generate",
+    "gallery": "Gallery",
+    "settings": "Settings"
+  },
+  "generator": {
+    "title": "Generate Anime Video",
+    "generationType": {
+      "label": "Generation Type",
+      "textToVideo": "Text to Video",
+      "imageToVideo": "Image to Video"
+    },
+    "prompt": {
+      "label": "Prompt",
+      "placeholder": "Describe the anime video you want to generate...",
+      "helperText": "Be specific about characters, actions, style, and setting for best results"
+    },
+    "imageUpload": {
+      "label": "Upload Image",
+      "dragDrop": "Click to upload or drag and drop",
+      "fileTypes": "PNG, JPG, WEBP, GIF up to {maxSize}MB",
+      "removeFile": "Remove file"
+    },
+    "model": {
+      "label": "Model",
+      "fal": "Fal.ai (Fast)",
+      "doubao": "Doubao Seedance (High Quality)"
+    },
+    "resolution": {
+      "label": "Resolution",
+      "480p": "480p (Lite)",
+      "720p": "720p (Lite)", 
+      "1080p": "1080p (Pro)"
+    },
+    "duration": {
+      "label": "Duration",
+      "5s": "5 seconds",
+      "10s": "10 seconds"
+    },
+    "aspectRatio": {
+      "label": "Aspect Ratio",
+      "16:9": "16:9 (Landscape)",
+      "9:16": "9:16 (Portrait)",
+      "1:1": "1:1 (Square)"
+    },
+    "generateButton": "Generate Video",
+    "generating": "Generating...",
+    "progress": {
+      "preparing": "Preparing generation...",
+      "processing": "Processing video...",
+      "finalizing": "Finalizing..."
+    },
+    "errors": {
+      "title": "Generation Error",
+      "promptRequired": "Please enter a prompt",
+      "imageRequired": "Please upload an image for image-to-video generation",
+      "apiKeyRequired": "API key is required",
+      "generationFailed": "Video generation failed. Please try again.",
+      "networkError": "Network error. Please check your connection.",
+      "invalidFile": "Invalid file type. Please upload an image file.",
+      "fileTooLarge": "File is too large. Maximum size is {maxSize}MB"
+    },
+    "warnings": {
+      "apiKeyRequired": {
+        "title": "API Key Required",
+        "message": "Please configure your Fal.ai API key in settings to generate videos."
+      }
+    }
+  },
+  "videoPlayer": {
+    "noVideo": {
+      "title": "No video generated yet",
+      "message": "Generate your first anime video to see it here."
+    },
+    "controls": {
+      "play": "Play",
+      "pause": "Pause",
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit Fullscreen",
+      "download": "Download Video"
+    },
+    "downloading": "Downloading...",
+    "info": {
+      "resolution": "Resolution",
+      "duration": "Duration", 
+      "aspectRatio": "Aspect Ratio",
+      "createdAt": "Created"
+    }
+  },
+  "gallery": {
+    "title": "Video Gallery",
+    "empty": {
+      "title": "No videos in your gallery",
+      "message": "Generate your first anime video to see it here."
+    },
+    "videoCount": "{count} video generated",
+    "videoCount_plural": "{count} videos generated",
+    "sortBy": {
+      "label": "Sort by",
+      "newest": "Newest First",
+      "oldest": "Oldest First"
+    },
+    "filterBy": {
+      "label": "Filter by",
+      "all": "All Videos",
+      "textToVideo": "Text to Video",
+      "imageToVideo": "Image to Video"
+    },
+    "actions": {
+      "clearAll": "Clear All Videos",
+      "confirmClear": "Are you sure you want to delete all videos? This action cannot be undone."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "apiKeys": {
+      "title": "API Keys",
+      "falai": {
+        "label": "Fal.ai API Key",
+        "placeholder": "Enter your Fal.ai API key",
+        "helperText": "Required for video generation using Fal.ai models",
+        "validate": "Validate Key",
+        "validating": "Validating...",
+        "valid": "API key is valid",
+        "invalid": "Invalid API key"
+      },
+      "doubao": {
+        "label": "Doubao API Key", 
+        "placeholder": "Enter your Doubao API key",
+        "helperText": "Required for video generation using Doubao Seedance model",
+        "validate": "Validate Key",
+        "validating": "Validating...",
+        "valid": "API key is valid",
+        "invalid": "Invalid API key"
+      }
+    },
+    "defaults": {
+      "title": "Default Generation Settings",
+      "model": "Default Model",
+      "resolution": "Default Resolution",
+      "duration": "Default Duration",
+      "aspectRatio": "Default Aspect Ratio"
+    },
+    "language": {
+      "title": "Language",
+      "label": "Interface Language",
+      "english": "English",
+      "chinese": "中文"
+    },
+    "actions": {
+      "save": "Save Settings",
+      "cancel": "Cancel"
+    }
+  },
+  "languageSwitcher": {
+    "label": "Language",
+    "english": "English",
+    "chinese": "中文"
+  }
+}
