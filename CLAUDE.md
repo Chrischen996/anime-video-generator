@@ -74,4 +74,8 @@ This is a Next.js 15 application with App Router that generates anime-style vide
 2. Task creation with automatic polling
 3. Progress simulation during generation
 4. Video URL proxying to avoid CORS issues
-5. Storage in gallery with metadata persistence
+5. Storage in gallery with metadata persistence[byterover-mcp]
+
+# important 
+always use byterover-retrieve-knowledge tool to get the related context before any tasks 
+always use byterover-store-knowledge to store all the critical informations after sucessful tasks
