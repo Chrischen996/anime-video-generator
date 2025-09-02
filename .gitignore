@@ -52,3 +52,9 @@ yarn-error.log*
 next-env.d.ts
 node_modules.claude/
 public/test-video.html
+.next/
+node_modules/
+tsconfig.tsbuildinfo
+test_video.mp4
+generated_video.mp4
+.git_disabled/
