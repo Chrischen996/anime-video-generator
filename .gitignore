@@ -50,4 +50,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-node_modules
+node_modules.claude/
+public/test-video.html
