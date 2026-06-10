@@ -20,6 +20,7 @@ interface AppState {
 type AppAction =
   | { type: 'SET_API_KEY'; payload: string }
   | { type: 'SET_DOUBAO_API_KEY'; payload: string }
+  | { type: 'SET_AGNES_API_KEY'; payload: string }
   | { type: 'SET_SETTINGS'; payload: Partial<AppSettings> }
   | { type: 'START_GENERATION' }
   | { type: 'SET_GENERATION_PROGRESS'; payload: number }
@@ -37,6 +38,7 @@ const initialState: AppState = {
   settings: {
     apiKey: '',
     doubaoApiKey: '',
+    agnesApiKey: '',
     defaultModel: 'fal-ai',
     defaultResolution: '1080p',
     defaultDuration: '5',
@@ -75,6 +77,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         settings: newDoubaoSettings,
+      };
+
+    case 'SET_AGNES_API_KEY':
+      const newAgnesSettings = { ...state.settings, agnesApiKey: action.payload };
+      storage.set('app_settings', newAgnesSettings);
+      return {
+        ...state,
+        settings: newAgnesSettings,
       };
 
     case 'SET_SETTINGS':

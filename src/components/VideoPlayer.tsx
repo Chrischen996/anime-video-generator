@@ -115,7 +115,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, className }) => {
           onPause={() => setIsPlaying(false)}
           onEnded={() => setIsPlaying(false)}
           poster={video.imageUrl}
-          crossOrigin="anonymous"
         />
 
         {/* Play/Pause Overlay */}

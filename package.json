@@ -26,11 +26,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^8.2.2",
     "eslint": "^9",
+    "eslint-config-next": "^15.4.4",
+    "open-cli": "^8.0.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "concurrently": "^8.2.2",
-    "open-cli": "^8.0.0",
     "wait-on": "^7.2.0"
-  }
+  },
+  "repository": "https://github.com/Chrischen996/anime-video-generator.git"
 }

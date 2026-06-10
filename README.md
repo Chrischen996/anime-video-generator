@@ -70,7 +70,11 @@ You can also set your API key as an environment variable:
    ```
    FAL_API_KEY=your_fal_api_key_here
    DOUBAO_API_KEY=your_doubao_api_key_here
+   AGNES_API_KEY=your_agnes_api_key_here
+   AGNES_MOCK_RESPONSE=false
    ```
+3. Restart the dev server after updating `.env.local`
+4. If you want to debug Agnes UI mapping first, temporarily set `AGNES_MOCK_RESPONSE=true`
 
 ## Usage
 

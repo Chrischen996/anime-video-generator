@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useVideoGeneration } from '@/hooks/useVideoGeneration';
 import { useApiKey } from '@/hooks/useApiKey';
 import { useApp } from '@/lib/context';
@@ -30,11 +30,23 @@ const VideoGenerator: React.FC = () => {
   const { hasValidApiKey } = useApiKey();
 
   const [generationType, setGenerationType] = useState<GenerationType>('text-to-video');
-  const [selectedModel, setSelectedModel] = useState<'fal-ai' | 'doubao'>(state.settings.defaultModel);
+  const [selectedModel, setSelectedModel] = useState<'fal-ai' | 'doubao' | 'agnes'>(state.settings.defaultModel);
   const [prompt, setPrompt] = useState('');
   const [resolution, setResolution] = useState<'480p' | '720p' | '1080p'>('1080p');
   const [duration, setDuration] = useState<'5' | '10'>('5');
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
+
+  useEffect(() => {
+    setSelectedModel(state.settings.defaultModel);
+    setResolution(state.settings.defaultResolution);
+    setDuration(state.settings.defaultDuration);
+    setAspectRatio(state.settings.defaultAspectRatio);
+  }, [
+    state.settings.defaultModel,
+    state.settings.defaultResolution,
+    state.settings.defaultDuration,
+    state.settings.defaultAspectRatio,
+  ]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -90,6 +102,7 @@ const VideoGenerator: React.FC = () => {
   const modelOptions = [
     { value: 'fal-ai', label: 'Fal.ai（快速）' },
     { value: 'doubao', label: '豆包 Seedance（高质量）' },
+    { value: 'agnes', label: 'Agnes AI Video V2.0' },
   ];
 
   const examplePrompts = [
@@ -131,7 +144,7 @@ const VideoGenerator: React.FC = () => {
         <Select
           label="模型"
           value={selectedModel}
-          onChange={(e) => setSelectedModel(e.target.value as 'fal-ai' | 'doubao')}
+          onChange={(e) => setSelectedModel(e.target.value as 'fal-ai' | 'doubao' | 'agnes')}
           options={modelOptions}
         />
         <p className="text-xs text-gray-500">
@@ -282,6 +295,7 @@ const VideoGenerator: React.FC = () => {
           <div>Selected Model: {selectedModel}</div>
           <div>Fal.ai API Key: {state.settings.apiKey ? '***configured***' : 'not set'}</div>
           <div>Doubao API Key: {state.settings.doubaoApiKey ? '***configured***' : 'not set'}</div>
+          <div>Agnes API Key: {state.settings.agnesApiKey ? '***configured***' : 'not set'}</div>
           <div>hasValidApiKey(selectedModel): {hasValidApiKey(selectedModel) ? 'true' : 'false'}</div>
         </div>
       </div>
@@ -321,7 +335,7 @@ const VideoGenerator: React.FC = () => {
                 需要API密钥
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
-                <p>请在设置中配置您的 {selectedModel === 'doubao' ? '豆包' : 'Fal.ai'} API 密钥以生成视频。</p>
+                <p>请在设置中配置您的 {selectedModel === 'doubao' ? '豆包' : selectedModel === 'agnes' ? 'Agnes AI' : 'Fal.ai'} API 密钥以生成视频。</p>
               </div>
             </div>
           </div>

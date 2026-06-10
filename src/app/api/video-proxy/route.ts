@@ -4,17 +4,41 @@ import { NextRequest } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const encodedUrl = searchParams.get('url');
-    if (!encodedUrl) {
+    const targetUrl = searchParams.get('url');
+    if (!targetUrl) {
       return new Response('Missing url param', { status: 400 });
     }
 
-    const targetUrl = decodeURIComponent(encodedUrl);
+    let parsedTargetUrl: URL;
+    try {
+      parsedTargetUrl = new URL(targetUrl);
+    } catch {
+      return new Response('Invalid url param', { status: 400 });
+    }
+
+    if (!['http:', 'https:'].includes(parsedTargetUrl.protocol)) {
+      return new Response('Unsupported url protocol', { status: 400 });
+    }
 
     const range = request.headers.get('range') || undefined;
-    const upstreamResponse = await fetch(targetUrl, {
-      headers: range ? { Range: range } : undefined,
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    let upstreamResponse: Response;
+    try {
+      upstreamResponse = await fetch(parsedTargetUrl.toString(), {
+        headers: range ? { Range: range } : undefined,
+        signal: controller.signal,
+      });
+    } catch (error) {
+      console.warn('Video proxy fetch failed, redirecting to original URL:', {
+        targetUrl: parsedTargetUrl.toString(),
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return new Response('Video proxy unavailable', { status: 502 });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     // Pass-through status and headers relevant for media streaming
     const headers = new Headers();
@@ -37,8 +61,7 @@ export async function GET(request: NextRequest) {
       headers,
     });
   } catch (error: any) {
+    console.warn('Video proxy failed:', error);
     return new Response(error?.message || 'Proxy error', { status: 502 });
   }
 }
-
-

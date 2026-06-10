@@ -70,28 +70,29 @@ export const useApiKey = () => {
     setValidationResult(null);
   }, [dispatch]);
 
-  const hasValidApiKey = useCallback((model?: 'fal-ai' | 'doubao'): boolean => {
-    if (model === 'doubao') {
-      return state.settings.doubaoApiKey.trim().length > 0;
-    } else if (model === 'fal-ai') {
-      return state.settings.apiKey.trim().length > 0;
-    }
-    // If no model specified, check if at least one API key is available
-    return state.settings.apiKey.trim().length > 0 || state.settings.doubaoApiKey.trim().length > 0;
-  }, [state.settings.apiKey, state.settings.doubaoApiKey]);
+  const hasValidApiKey = useCallback((model?: 'fal-ai' | 'doubao' | 'agnes'): boolean => {
+    // 暂时禁用 API key 检查，允许所有用户生成视频
+    return true;
+  }, []);
 
   const setDoubaoApiKey = useCallback((apiKey: string) => {
     dispatch({ type: 'SET_DOUBAO_API_KEY', payload: apiKey });
   }, [dispatch]);
 
+  const setAgnesApiKey = useCallback((apiKey: string) => {
+    dispatch({ type: 'SET_AGNES_API_KEY', payload: apiKey });
+  }, [dispatch]);
+
   return {
     apiKey: state.settings.apiKey,
     doubaoApiKey: state.settings.doubaoApiKey,
+    agnesApiKey: state.settings.agnesApiKey || '',
     isValidating,
     validationResult,
     validateApiKey,
     setApiKey,
     setDoubaoApiKey,
+    setAgnesApiKey,
     clearApiKey,
     hasValidApiKey,
   };

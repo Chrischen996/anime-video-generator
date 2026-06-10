@@ -11,7 +11,7 @@ export interface FalApiResponse {
   prompt: string;
   // Optional additional fields from providers
   task_id?: string;
-  status?: 'completed' | 'processing' | 'failed';
+  status?: 'completed' | 'processing' | 'failed' | 'pending';
   resolution?: string;
   duration?: number | string;
   ratio?: string;
@@ -26,7 +26,7 @@ export interface VideoGenerationRequest {
   resolution?: '480p' | '720p' | '1080p';
   duration?: '5' | '10';
   aspect_ratio?: '16:9' | '9:16' | '1:1';
-  model?: 'fal-ai' | 'doubao';
+  model?: 'fal-ai' | 'doubao' | 'agnes';
 }
 
 export interface VideoGenerationResponse {
@@ -48,18 +48,19 @@ export interface GeneratedVideo {
   duration: string;
   aspectRatio: string;
   // Metadata surfaced from provider
-  model?: 'fal-ai' | 'doubao';
+  model?: 'fal-ai' | 'doubao' | 'agnes';
   seed?: number;
   ratio?: string;
   framesPerSecond?: number;
   taskId?: string;
-  status?: 'completed' | 'processing' | 'failed';
+  status?: 'completed' | 'processing' | 'failed' | 'pending';
 }
 
 export interface AppSettings {
   apiKey: string;
   doubaoApiKey: string;
-  defaultModel: 'fal-ai' | 'doubao';
+  agnesApiKey?: string;
+  defaultModel: 'fal-ai' | 'doubao' | 'agnes';
   defaultResolution: '480p' | '720p' | '1080p';
   defaultDuration: '5' | '10';
   defaultAspectRatio: '16:9' | '9:16' | '1:1';
@@ -85,7 +86,7 @@ export interface DoubaoApiResponse {
     content_type: string;
   };
   task_id: string;
-  status: 'completed' | 'processing' | 'failed';
+  status: 'completed' | 'processing' | 'failed' | 'pending';
   prompt: string;
   // passthrough meta
   resolution?: string;
@@ -130,7 +131,7 @@ export interface ModelConfig {
   supportedResolutions: string[];
   supportedDurations: string[];
   costPer5Sec: number;
-  provider: 'fal-ai' | 'doubao';
+  provider: 'fal-ai' | 'doubao' | 'agnes';
 }
 
 export const AVAILABLE_MODELS: Record<string, ModelConfig> = {
@@ -160,5 +161,14 @@ export const AVAILABLE_MODELS: Record<string, ModelConfig> = {
     supportedDurations: ['5', '10'],
     costPer5Sec: 0.015, // Significantly reduced cost based on ¥0.8/¥2 per million tokens
     provider: 'doubao'
+  },
+  'agnes-video-v2': {
+    name: 'agnes-video-v2',
+    displayName: 'Agnes AI Video V2.0',
+    description: 'Agnes AI Video V2.0 - text and image to video generation',
+    supportedResolutions: ['480p', '720p', '1080p'],
+    supportedDurations: ['5', '10'],
+    costPer5Sec: 0,
+    provider: 'agnes'
   }
 };

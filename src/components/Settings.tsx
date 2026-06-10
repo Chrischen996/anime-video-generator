@@ -16,13 +16,19 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
   const { state, dispatch } = useApp();
   const [apiKey, setApiKey] = useState(state.settings.apiKey);
   const [doubaoApiKey, setDoubaoApiKey] = useState(state.settings.doubaoApiKey);
+  const [agnesApiKey, setAgnesApiKey] = useState(state.settings.agnesApiKey || '');
   const [isValidating, setIsValidating] = useState(false);
   const [isValidatingDoubao, setIsValidatingDoubao] = useState(false);
+  const [isValidatingAgnes, setIsValidatingAgnes] = useState(false);
   const [validationResult, setValidationResult] = useState<{
     isValid: boolean;
     message: string;
   } | null>(null);
   const [doubaoValidationResult, setDoubaoValidationResult] = useState<{
+    isValid: boolean;
+    message: string;
+  } | null>(null);
+  const [agnesValidationResult, setAgnesValidationResult] = useState<{
     isValid: boolean;
     message: string;
   } | null>(null);
@@ -32,6 +38,34 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
     defaultDuration: state.settings.defaultDuration,
     defaultAspectRatio: state.settings.defaultAspectRatio,
   });
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setApiKey(state.settings.apiKey || '');
+    setDoubaoApiKey(state.settings.doubaoApiKey || '');
+    setAgnesApiKey(state.settings.agnesApiKey || '');
+    setSettings({
+      defaultModel: state.settings.defaultModel,
+      defaultResolution: state.settings.defaultResolution,
+      defaultDuration: state.settings.defaultDuration,
+      defaultAspectRatio: state.settings.defaultAspectRatio,
+    });
+    setValidationResult(null);
+    setDoubaoValidationResult(null);
+    setAgnesValidationResult(null);
+  }, [
+    isOpen,
+    state.settings.apiKey,
+    state.settings.doubaoApiKey,
+    state.settings.agnesApiKey,
+    state.settings.defaultModel,
+    state.settings.defaultResolution,
+    state.settings.defaultDuration,
+    state.settings.defaultAspectRatio,
+  ]);
 
   const validateApiKey = async () => {
     if (!apiKey.trim()) {
@@ -107,15 +141,52 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleSave = () => {
-    // Save API keys
-    dispatch({ type: 'SET_API_KEY', payload: apiKey.trim() });
-    dispatch({ type: 'SET_DOUBAO_API_KEY', payload: doubaoApiKey.trim() });
+  const validateAgnesApiKey = async () => {
+    if (!agnesApiKey.trim()) {
+      setAgnesValidationResult({
+        isValid: false,
+        message: 'Please enter an Agnes API key',
+      });
+      return;
+    }
 
-    // Save other settings
+    setIsValidatingAgnes(true);
+    setAgnesValidationResult(null);
+
+    try {
+      const response = await fetch('/api/validate-agnes-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ apiKey: agnesApiKey.trim() }),
+      });
+
+      const result = await response.json();
+
+      setAgnesValidationResult({
+        isValid: result.valid,
+        message: result.valid ? 'Agnes API key is valid!' : result.error || 'Invalid API key',
+      });
+    } catch (error) {
+      setAgnesValidationResult({
+        isValid: false,
+        message: 'Failed to validate Agnes API key. Please check your connection.',
+      });
+    } finally {
+      setIsValidatingAgnes(false);
+    }
+  };
+
+  const handleSave = () => {
     dispatch({
       type: 'SET_SETTINGS',
-      payload: settings,
+      payload: {
+        ...settings,
+        apiKey: apiKey.trim(),
+        doubaoApiKey: doubaoApiKey.trim(),
+        agnesApiKey: agnesApiKey.trim(),
+      },
     });
 
     onClose();
@@ -141,6 +212,7 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
   const modelOptions = [
     { value: 'fal-ai', label: 'Fal.ai Seedance' },
     { value: 'doubao', label: 'ByteDance Doubao 1.5 Pro' },
+    { value: 'agnes', label: 'Agnes AI Video V2.0' },
   ];
 
   return (
@@ -260,6 +332,41 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                   }`}
                 >
                   {doubaoValidationResult.message}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Agnes API Key */}
+          <div className="space-y-2">
+            <Input
+              label="Agnes AI API Key"
+              type="password"
+              value={agnesApiKey}
+              onChange={(e) => setAgnesApiKey(e.target.value)}
+              placeholder="Enter your Agnes AI API key"
+              helperText="Get your Agnes AI API key from https://platform.agnes-ai.com. Agnes Video V2.0 offers excellent Image-to-Video and Text-to-Video generation with audio sync capabilities."
+              showPasswordToggle={true}
+            />
+
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={validateAgnesApiKey}
+                loading={isValidatingAgnes}
+                disabled={!agnesApiKey.trim()}
+              >
+                Validate
+              </Button>
+
+              {agnesValidationResult && (
+                <div
+                  className={`text-sm ${
+                    agnesValidationResult.isValid ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
+                  {agnesValidationResult.message}
                 </div>
               )}
             </div>
