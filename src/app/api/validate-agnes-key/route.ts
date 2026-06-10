@@ -1,30 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { AgnesClient } from '@/lib/providers/agnes';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const { apiKey } = await request.json();
-
-    if (!apiKey || !apiKey.trim()) {
+    const apiKey = process.env.AGNES_API_KEY?.trim() || '';
+    if (!apiKey || apiKey === 'your_agnes_api_key_here') {
       return NextResponse.json(
-        { valid: false, error: 'API key is required' },
+        { valid: false, error: 'AGNES_API_KEY is not configured on the server' },
         { status: 400 }
       );
     }
 
-    const client = new AgnesClient(apiKey.trim());
-    const isValid = await client.validateApiKey();
-
-    return NextResponse.json({
-      valid: isValid,
-      error: isValid ? null : 'Invalid API key',
-    });
+    return NextResponse.json({ valid: true, message: 'AGNES_API_KEY is configured on the server' });
   } catch (error: any) {
     console.error('Agnes API key validation error:', error);
 
     return NextResponse.json({
       valid: false,
-      error: error.message || 'Failed to validate API key',
+      error: error.message || 'Failed to validate server environment',
     });
   }
 }

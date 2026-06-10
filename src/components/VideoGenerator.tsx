@@ -293,9 +293,7 @@ const VideoGenerator: React.FC = () => {
         <h4 className="text-sm font-medium text-gray-800 mb-2">Debug Information</h4>
         <div className="text-xs text-gray-600 space-y-1">
           <div>Selected Model: {selectedModel}</div>
-          <div>Fal.ai API Key: {state.settings.apiKey ? '***configured***' : 'not set'}</div>
-          <div>Doubao API Key: {state.settings.doubaoApiKey ? '***configured***' : 'not set'}</div>
-          <div>Agnes API Key: {state.settings.agnesApiKey ? '***configured***' : 'not set'}</div>
+          <div>API Keys: loaded from .env.local / server env only</div>
           <div>hasValidApiKey(selectedModel): {hasValidApiKey(selectedModel) ? 'true' : 'false'}</div>
         </div>
       </div>
@@ -335,7 +333,7 @@ const VideoGenerator: React.FC = () => {
                 需要API密钥
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
-                <p>请在设置中配置您的 {selectedModel === 'doubao' ? '豆包' : selectedModel === 'agnes' ? 'Agnes AI' : 'Fal.ai'} API 密钥以生成视频。</p>
+                <p>API keys are configured in .env.local or the server environment now.</p>
               </div>
             </div>
           </div>

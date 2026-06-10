@@ -11,6 +11,7 @@ export interface FalApiResponse {
   prompt: string;
   // Optional additional fields from providers
   task_id?: string;
+  video_id?: string;
   status?: 'completed' | 'processing' | 'failed' | 'pending';
   resolution?: string;
   duration?: number | string;
@@ -53,6 +54,7 @@ export interface GeneratedVideo {
   ratio?: string;
   framesPerSecond?: number;
   taskId?: string;
+  videoId?: string;
   status?: 'completed' | 'processing' | 'failed' | 'pending';
 }
 

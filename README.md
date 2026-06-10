@@ -11,7 +11,7 @@ A desktop application that generates anime-style videos using the latest AI mode
 - **Flexible Duration**: Generate 5 or 10-second videos
 - **Aspect Ratio Options**: 16:9, 9:16, and 1:1 aspect ratios
 - **Video Gallery**: Browse and manage your generated videos
-- **Secure API Key Management**: Safe storage of multiple API keys
+- **Server-Side API Key Management**: Read API keys from `.env.local` / server environment only
 - **Download Videos**: Save generated videos as MP4 files
 - **Responsive Design**: Modern, intuitive user interface
 - **Cost-Effective**: Doubao 1.5 Pro offers 50x cheaper pricing than GPT-4 with comparable performance
@@ -19,8 +19,9 @@ A desktop application that generates anime-style videos using the latest AI mode
 ## Prerequisites
 
 - Node.js 18+ installed
-- A Fal.ai API key (get one at [fal.ai](https://fal.ai))
-- A ByteDance Doubao 1.5 Pro API key (get one at [Ark Platform](https://ark.cn-beijing.volces.com)) - Recommended for cost-effectiveness
+- A Fal.ai API key configured on the server
+- A ByteDance Doubao 1.5 Pro API key configured on the server
+- An Agnes API key configured on the server if you plan to use Agnes
 
 ## Installation
 
@@ -54,16 +55,15 @@ A desktop application that generates anime-style videos using the latest AI mode
 
 1. Get your API keys:
    - Fal.ai API key from [fal.ai](https://fal.ai)
-   - ByteDance Doubao API key from [doubao.bytedance.com](https://doubao.bytedance.com) (optional)
-2. In the application, click the "Settings" button in the top-right corner
-3. Enter your API keys in the respective fields
-4. Click "Validate Key" for each API key to ensure they're working
-5. Choose your default AI model
-6. Click "Save Settings"
+   - ByteDance Doubao API key from [doubao.bytedance.com](https://doubao.bytedance.com)
+   - Agnes API key from [platform.agnes-ai.com](https://platform.agnes-ai.com)
+2. Add them to `.env.local` or your server environment
+3. Choose your default AI model in the app
+4. Click "Save Settings"
 
-### Environment Variables (Optional)
+### Environment Variables
 
-You can also set your API key as an environment variable:
+Set your API keys as environment variables in `.env.local`:
 
 1. Create a `.env.local` file in the project root
 2. Add your API keys:

@@ -11,35 +11,7 @@ export const useVideoGeneration = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const generateVideo = useCallback(async (request: VideoGenerationRequest): Promise<void> => {
-    // Check API key based on selected model
-    let requiredApiKey: string;
-    let modelName: string;
-
-    if (request.model === 'doubao') {
-      requiredApiKey = state.settings.doubaoApiKey;
-      modelName = 'Doubao';
-    } else if (request.model === 'agnes') {
-      requiredApiKey = state.settings.agnesApiKey || '';
-      modelName = 'Agnes AI';
-    } else {
-      requiredApiKey = state.settings.apiKey;
-      modelName = 'Fal.ai';
-    }
-
     console.log('Debug: generateVideo called with model:', request.model);
-    console.log('Debug: doubaoApiKey:', state.settings.doubaoApiKey);
-    console.log('Debug: agnesApiKey:', state.settings.agnesApiKey);
-    console.log('Debug: falaiApiKey:', state.settings.apiKey);
-    console.log('Debug: requiredApiKey:', requiredApiKey);
-
-    // 暂时禁用 API key 检查
-    // if (!requiredApiKey) {
-    //   dispatch({
-    //     type: 'GENERATION_ERROR',
-    //     payload: `${modelName} API key is required. Please configure it in settings.`,
-    //   });
-    //   return;
-    // }
 
     dispatch({ type: 'START_GENERATION' });
 
@@ -57,11 +29,6 @@ export const useVideoGeneration = () => {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-
-      // Add Agnes API key header if using Agnes model
-      if (request.model === 'agnes' && state.settings.agnesApiKey) {
-        headers['x-agnes-api-key'] = state.settings.agnesApiKey;
-      }
 
       const response = await fetch('/api/generate-video', {
         method: 'POST',
@@ -99,6 +66,7 @@ export const useVideoGeneration = () => {
         ratio: (result.data.ratio as string) || undefined,
         framesPerSecond: (result.data.framespersecond as number) || undefined,
         taskId: (result.data.task_id as string) || undefined,
+        videoId: (result.data.video_id as string) || undefined,
         status: (result.data.status as any) || undefined,
       };
 
@@ -113,7 +81,7 @@ export const useVideoGeneration = () => {
         payload: error.message || 'An unexpected error occurred',
       });
     }
-  }, [state.settings.apiKey, state.settings.doubaoApiKey, state.settings.agnesApiKey, dispatch]);
+  }, [dispatch]);
 
   const generateTextToVideo = useCallback(async (
     prompt: string,

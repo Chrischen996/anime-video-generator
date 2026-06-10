@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useApp } from '@/lib/context';
-import { useApiKey } from '@/hooks/useApiKey';
 import Button from './ui/Button';
 import LanguageSwitcher from './LanguageSwitcher';
 
@@ -14,7 +13,6 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onOpenSettings, activeTab, onTabChange }) => {
   const { state } = useApp();
-  const { hasValidApiKey } = useApiKey();
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -75,16 +73,8 @@ const Header: React.FC<HeaderProps> = ({ onOpenSettings, activeTab, onTabChange 
 
           {/* Right Side - Status and Settings */}
           <div className="flex items-center space-x-4">
-            {/* API Key Status */}
-            <div className="flex items-center space-x-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  hasValidApiKey() ? 'bg-green-500' : 'bg-red-500'
-                }`}
-              />
-              <span className="text-sm text-gray-600">
-                {hasValidApiKey() ? 'API 已连接' : 'API 未配置'}
-              </span>
+            <div className="text-sm text-gray-500">
+              API keys via server environment
             </div>
 
             {/* Generation Status */}

@@ -127,7 +127,7 @@ export class DoubaoClient {
     return this.convertToStandardResponse(result, request.prompt);
   }
 
-  async getTaskStatus(taskId: string): Promise<DoubaoApiResponse> {
+  async getTaskStatus(taskId: string, prompt: string): Promise<DoubaoApiResponse> {
     const response = await fetch(`${this.baseUrl}/${taskId}`, {
       method: 'GET',
       headers: {
@@ -153,14 +153,14 @@ export class DoubaoClient {
     }
 
     const result = await response.json();
-    return this.convertToStandardResponse(result, '');
+    return this.convertToStandardResponse(result, prompt);
   }
 
   // 轮询任务完成状态
   async pollTaskCompletion(taskId: string, prompt: string, maxAttempts: number = 30): Promise<DoubaoApiResponse> {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const taskStatus = await this.getTaskStatus(taskId);
+        const taskStatus = await this.getTaskStatus(taskId, prompt);
 
         if (taskStatus.status === 'completed') {
           return taskStatus;
@@ -246,16 +246,24 @@ export class DoubaoClient {
   }
 
   private convertToStandardResponse(doubaoResponse: any, prompt: string): DoubaoApiResponse {
+    const status = this.mapStatus(doubaoResponse.status || doubaoResponse.state);
+    const videoUrl =
+      doubaoResponse.content?.video_url ||
+      doubaoResponse.result?.video_url ||
+      doubaoResponse.data?.video_url ||
+      doubaoResponse.video_url ||
+      '';
+
     // Convert Doubao API response to our standard format
     return {
       video: {
-        url: doubaoResponse.content?.video_url || doubaoResponse.result?.video_url || doubaoResponse.data?.video_url || doubaoResponse.video_url || '',
+        url: videoUrl,
         width: doubaoResponse.result?.width || doubaoResponse.data?.width || 1280,
         height: doubaoResponse.result?.height || doubaoResponse.data?.height || 720,
         content_type: 'video/mp4'
       },
       task_id: doubaoResponse.id || doubaoResponse.task_id || `doubao_${Date.now()}`,
-      status: this.mapStatus(doubaoResponse.status || doubaoResponse.state),
+      status,
       prompt: prompt,
       // Pass through additional metadata
       resolution: doubaoResponse.resolution,

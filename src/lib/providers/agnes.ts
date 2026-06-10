@@ -12,6 +12,7 @@ export interface AgnesVideoRequest {
 
 export interface AgnesVideoResponse {
   task_id: string;
+  video_id?: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   progress?: number;
   video?: {
@@ -44,7 +45,7 @@ export class AgnesClient {
       height = 768,
     } = request;
 
-    if (process.env.AGNES_MOCK_RESPONSE === 'true') {
+    if (process.env.NODE_ENV !== 'production' && process.env.AGNES_MOCK_RESPONSE === 'true') {
       return {
         task_id: `task_mock_${Date.now()}`,
         status: 'completed',
@@ -92,16 +93,19 @@ export class AgnesClient {
 
     const status = this.mapStatus(result.status);
     const taskId = result.task_id || result.id || '';
+    const videoId = result.video_id || result.videoId || '';
     const videoUrl =
       result.video?.url ||
+      result.video_url ||
+      result.videoUrl ||
       result.url ||
       result.output?.video_url ||
-      result.remixed_from_video_id ||
       '';
     const dimensions = this.parseSize(result.size);
 
     return {
       task_id: taskId,
+      video_id: videoId || undefined,
       status,
       video: status === 'completed' && videoUrl ? {
         url: videoUrl,
@@ -133,17 +137,20 @@ export class AgnesClient {
 
     // Map Agnes status to our format
     const status = this.mapStatus(result.status);
+    const videoId = result.video_id || result.videoId || '';
 
     const videoUrl =
       result.video?.url ||
+      result.video_url ||
+      result.videoUrl ||
       result.url ||
       result.output?.video_url ||
-      result.remixed_from_video_id ||
       '';
     const dimensions = this.parseSize(result.size);
 
     return {
       task_id: taskId,
+      video_id: videoId || undefined,
       status,
       progress: typeof result.progress === 'number' ? result.progress : undefined,
       video: status === 'completed' && videoUrl ? {

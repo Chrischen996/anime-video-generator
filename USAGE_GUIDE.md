@@ -3,15 +3,15 @@
 ## 快速开始
 
 ### 1. 获取 API 密钥
-1. 访问 [fal.ai](https://fal.ai) 注册账户
-2. 获取您的 API 密钥
+1. 访问 [fal.ai](https://fal.ai)、火山方舟 (Ark) 和 Agnes AI 平台注册账户
+2. 分别获取 Fal.ai、Doubao 和 Agnes 的 API 密钥
 3. 确保账户有足够的余额用于视频生成
 
 ### 2. 配置应用
-1. 启动应用后，点击右上角的"Settings"按钮
-2. 在"Fal.ai API Key"字段中输入您的 API 密钥
-3. 点击"Validate Key"验证密钥是否有效
-4. 设置默认的分辨率、时长和宽高比
+1. 在项目根目录创建 `.env.local`
+2. 写入 `FAL_API_KEY`、`DOUBAO_API_KEY` 和 `AGNES_API_KEY`
+3. 保存后重启开发服务器
+4. 打开应用，设置默认的分辨率、时长和宽高比
 5. 点击"Save Settings"保存设置
 
 ### 3. 生成您的第一个视频

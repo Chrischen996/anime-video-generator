@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/lib/context';
 import Button from './ui/Button';
-import Input from './ui/Input';
 import Select from './ui/Select';
 import Modal from './ui/Modal';
 
@@ -14,24 +13,6 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
   const { state, dispatch } = useApp();
-  const [apiKey, setApiKey] = useState(state.settings.apiKey);
-  const [doubaoApiKey, setDoubaoApiKey] = useState(state.settings.doubaoApiKey);
-  const [agnesApiKey, setAgnesApiKey] = useState(state.settings.agnesApiKey || '');
-  const [isValidating, setIsValidating] = useState(false);
-  const [isValidatingDoubao, setIsValidatingDoubao] = useState(false);
-  const [isValidatingAgnes, setIsValidatingAgnes] = useState(false);
-  const [validationResult, setValidationResult] = useState<{
-    isValid: boolean;
-    message: string;
-  } | null>(null);
-  const [doubaoValidationResult, setDoubaoValidationResult] = useState<{
-    isValid: boolean;
-    message: string;
-  } | null>(null);
-  const [agnesValidationResult, setAgnesValidationResult] = useState<{
-    isValid: boolean;
-    message: string;
-  } | null>(null);
   const [settings, setSettings] = useState({
     defaultModel: state.settings.defaultModel,
     defaultResolution: state.settings.defaultResolution,
@@ -44,148 +25,25 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    setApiKey(state.settings.apiKey || '');
-    setDoubaoApiKey(state.settings.doubaoApiKey || '');
-    setAgnesApiKey(state.settings.agnesApiKey || '');
     setSettings({
       defaultModel: state.settings.defaultModel,
       defaultResolution: state.settings.defaultResolution,
       defaultDuration: state.settings.defaultDuration,
       defaultAspectRatio: state.settings.defaultAspectRatio,
     });
-    setValidationResult(null);
-    setDoubaoValidationResult(null);
-    setAgnesValidationResult(null);
   }, [
     isOpen,
-    state.settings.apiKey,
-    state.settings.doubaoApiKey,
-    state.settings.agnesApiKey,
     state.settings.defaultModel,
     state.settings.defaultResolution,
     state.settings.defaultDuration,
     state.settings.defaultAspectRatio,
   ]);
 
-  const validateApiKey = async () => {
-    if (!apiKey.trim()) {
-      setValidationResult({
-        isValid: false,
-        message: 'Please enter an API key',
-      });
-      return;
-    }
-
-    setIsValidating(true);
-    setValidationResult(null);
-
-    try {
-      const response = await fetch('/api/validate-key', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ apiKey: apiKey.trim() }),
-      });
-
-      const result = await response.json();
-
-      setValidationResult({
-        isValid: result.valid,
-        message: result.valid ? 'Fal.ai API key is valid!' : result.error || 'Invalid API key',
-      });
-    } catch (error) {
-      setValidationResult({
-        isValid: false,
-        message: 'Failed to validate API key. Please check your connection.',
-      });
-    } finally {
-      setIsValidating(false);
-    }
-  };
-
-  const validateDoubaoApiKey = async () => {
-    if (!doubaoApiKey.trim()) {
-      setDoubaoValidationResult({
-        isValid: false,
-        message: 'Please enter a Doubao API key',
-      });
-      return;
-    }
-
-    setIsValidatingDoubao(true);
-    setDoubaoValidationResult(null);
-
-    try {
-      const response = await fetch('/api/validate-doubao-key', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ apiKey: doubaoApiKey.trim() }),
-      });
-
-      const result = await response.json();
-
-      setDoubaoValidationResult({
-        isValid: result.valid,
-        message: result.valid ? 'Doubao API key is valid!' : result.error || 'Invalid API key',
-      });
-    } catch (error) {
-      setDoubaoValidationResult({
-        isValid: false,
-        message: 'Failed to validate Doubao API key. Please check your connection.',
-      });
-    } finally {
-      setIsValidatingDoubao(false);
-    }
-  };
-
-  const validateAgnesApiKey = async () => {
-    if (!agnesApiKey.trim()) {
-      setAgnesValidationResult({
-        isValid: false,
-        message: 'Please enter an Agnes API key',
-      });
-      return;
-    }
-
-    setIsValidatingAgnes(true);
-    setAgnesValidationResult(null);
-
-    try {
-      const response = await fetch('/api/validate-agnes-key', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ apiKey: agnesApiKey.trim() }),
-      });
-
-      const result = await response.json();
-
-      setAgnesValidationResult({
-        isValid: result.valid,
-        message: result.valid ? 'Agnes API key is valid!' : result.error || 'Invalid API key',
-      });
-    } catch (error) {
-      setAgnesValidationResult({
-        isValid: false,
-        message: 'Failed to validate Agnes API key. Please check your connection.',
-      });
-    } finally {
-      setIsValidatingAgnes(false);
-    }
-  };
-
   const handleSave = () => {
     dispatch({
       type: 'SET_SETTINGS',
       payload: {
         ...settings,
-        apiKey: apiKey.trim(),
-        doubaoApiKey: doubaoApiKey.trim(),
-        agnesApiKey: agnesApiKey.trim(),
       },
     });
 
@@ -238,137 +96,15 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                 </svg>
               </div>
               <div className="ml-3">
-                <h4 className="text-sm font-medium text-blue-800">
-                  API Keys Required
-                </h4>
+                <h4 className="text-sm font-medium text-blue-800">API Keys Are Server-Only</h4>
                 <div className="mt-2 text-sm text-blue-700">
                   <p>
-                    Get your API keys from{' '}
-                    <a
-                      href="https://fal.ai"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-blue-900"
-                    >
-                      fal.ai
-                    </a>
-                    {' '}and{' '}
-                    <a
-                      href="https://ark.cn-beijing.volces.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-blue-900"
-                    >
-                      火山方舟 (Ark)
-                    </a>
-                    {' '}for Doubao access
+                    This app now reads <code>.env.local</code> and server environment variables only.
+                    Set <code>FAL_API_KEY</code>, <code>DOUBAO_API_KEY</code>, and <code>AGNES_API_KEY</code>
+                    on the server, then restart the dev server.
                   </p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Input
-              label="Fal.ai API Key"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter your Fal.ai API key"
-              helperText="Your Fal.ai API key is used to authenticate your requests to the Fal.ai API."
-              showPasswordToggle={true}
-            />
-
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={validateApiKey}
-                loading={isValidating}
-                disabled={!apiKey.trim()}
-              >
-                Validate
-              </Button>
-
-              {validationResult && (
-                <div
-                  className={`text-sm ${
-                    validationResult.isValid ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {validationResult.message}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Doubao API Key */}
-          <div className="space-y-2">
-            <Input
-              label="Doubao 1.5 Pro API Key"
-              type="password"
-              value={doubaoApiKey}
-              onChange={(e) => setDoubaoApiKey(e.target.value)}
-              placeholder="Enter your Doubao 1.5 Pro API key from Ark platform"
-              helperText="Get your Doubao 1.5 Pro API key from 火山方舟 (Ark) platform at ark.cn-beijing.volces.com. Doubao 1.5 Pro offers 50x cheaper pricing than GPT-4 with comparable performance. Input: ¥0.8/M tokens, Output: ¥2/M tokens (32k context) or ¥5/¥9 per M tokens (256k context)."
-              showPasswordToggle={true}
-            />
-
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={validateDoubaoApiKey}
-                loading={isValidatingDoubao}
-                disabled={!doubaoApiKey.trim()}
-              >
-                Validate
-              </Button>
-
-              {doubaoValidationResult && (
-                <div
-                  className={`text-sm ${
-                    doubaoValidationResult.isValid ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {doubaoValidationResult.message}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Agnes API Key */}
-          <div className="space-y-2">
-            <Input
-              label="Agnes AI API Key"
-              type="password"
-              value={agnesApiKey}
-              onChange={(e) => setAgnesApiKey(e.target.value)}
-              placeholder="Enter your Agnes AI API key"
-              helperText="Get your Agnes AI API key from https://platform.agnes-ai.com. Agnes Video V2.0 offers excellent Image-to-Video and Text-to-Video generation with audio sync capabilities."
-              showPasswordToggle={true}
-            />
-
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={validateAgnesApiKey}
-                loading={isValidatingAgnes}
-                disabled={!agnesApiKey.trim()}
-              >
-                Validate
-              </Button>
-
-              {agnesValidationResult && (
-                <div
-                  className={`text-sm ${
-                    agnesValidationResult.isValid ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {agnesValidationResult.message}
-                </div>
-              )}
             </div>
           </div>
         </div>

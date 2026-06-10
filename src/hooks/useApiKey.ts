@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useApp } from '@/lib/context';
 
 interface ApiKeyValidationResult {
   isValid: boolean;
@@ -9,32 +8,16 @@ interface ApiKeyValidationResult {
 }
 
 export const useApiKey = () => {
-  const { state, dispatch } = useApp();
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<ApiKeyValidationResult | null>(null);
 
-  const validateApiKey = useCallback(async (apiKey?: string): Promise<ApiKeyValidationResult> => {
-    const keyToValidate = apiKey || state.settings.apiKey;
-    
-    if (!keyToValidate.trim()) {
-      const result = {
-        isValid: false,
-        message: 'API key is required',
-      };
-      setValidationResult(result);
-      return result;
-    }
-
+  const validateApiKey = useCallback(async (): Promise<ApiKeyValidationResult> => {
     setIsValidating(true);
     setValidationResult(null);
 
     try {
       const response = await fetch('/api/validate-key', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ apiKey: keyToValidate.trim() }),
       });
 
       const data = await response.json();
@@ -50,7 +33,7 @@ export const useApiKey = () => {
     } catch (error) {
       const result: ApiKeyValidationResult = {
         isValid: false,
-        message: 'Failed to validate API key. Please check your connection.',
+        message: 'Failed to validate server environment. Please check your connection.',
       };
       
       setValidationResult(result);
@@ -58,35 +41,28 @@ export const useApiKey = () => {
     } finally {
       setIsValidating(false);
     }
-  }, [state.settings.apiKey]);
+  }, []);
 
-  const setApiKey = useCallback((apiKey: string) => {
-    dispatch({ type: 'SET_API_KEY', payload: apiKey });
+  const setApiKey = useCallback((_apiKey: string) => {
     setValidationResult(null);
-  }, [dispatch]);
+  }, []);
 
   const clearApiKey = useCallback(() => {
-    dispatch({ type: 'SET_API_KEY', payload: '' });
     setValidationResult(null);
-  }, [dispatch]);
+  }, []);
 
-  const hasValidApiKey = useCallback((model?: 'fal-ai' | 'doubao' | 'agnes'): boolean => {
-    // 暂时禁用 API key 检查，允许所有用户生成视频
+  const hasValidApiKey = useCallback((_model?: 'fal-ai' | 'doubao' | 'agnes'): boolean => {
     return true;
   }, []);
 
-  const setDoubaoApiKey = useCallback((apiKey: string) => {
-    dispatch({ type: 'SET_DOUBAO_API_KEY', payload: apiKey });
-  }, [dispatch]);
+  const setDoubaoApiKey = useCallback((_apiKey: string) => {}, []);
 
-  const setAgnesApiKey = useCallback((apiKey: string) => {
-    dispatch({ type: 'SET_AGNES_API_KEY', payload: apiKey });
-  }, [dispatch]);
+  const setAgnesApiKey = useCallback((_apiKey: string) => {}, []);
 
   return {
-    apiKey: state.settings.apiKey,
-    doubaoApiKey: state.settings.doubaoApiKey,
-    agnesApiKey: state.settings.agnesApiKey || '',
+    apiKey: '',
+    doubaoApiKey: '',
+    agnesApiKey: '',
     isValidating,
     validationResult,
     validateApiKey,

@@ -1,58 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { DoubaoClient } from '@/lib/doubao-client';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const { apiKey } = await request.json();
-
-    if (!apiKey) {
+    const apiKey = process.env.DOUBAO_API_KEY?.trim() || '';
+    if (!apiKey || apiKey === 'your_doubao_api_key_here') {
       return NextResponse.json(
-        { valid: false, error: 'API key is required' },
+        { valid: false, error: 'DOUBAO_API_KEY is not configured on the server' },
         { status: 400 }
       );
     }
 
-    // Use real Doubao client for validation
-    const client = new DoubaoClient(apiKey);
-    
-    try {
-      const isValid = await client.validateApiKey();
-      
-      if (isValid) {
-        return NextResponse.json({ 
-          valid: true, 
-          message: 'Doubao API key is valid' 
-        });
-      } else {
-        return NextResponse.json(
-          { valid: false, error: 'Invalid Doubao API key' },
-          { status: 401 }
-        );
-      }
-
-    } catch (error: any) {
-      console.error('Doubao API key validation error:', error);
-      
-      if (error.message?.includes('401') || 
-          error.message?.includes('unauthorized') ||
-          error.message?.includes('authentication')) {
-        return NextResponse.json(
-          { valid: false, error: 'Invalid Doubao API key' },
-          { status: 401 }
-        );
-      }
-      
-      // For other errors, assume the key might be invalid
-      return NextResponse.json(
-        { valid: false, error: 'Failed to validate Doubao API key. Please check your key.' },
-        { status: 500 }
-      );
-    }
-
+    return NextResponse.json({ valid: true, message: 'DOUBAO_API_KEY is configured on the server' });
   } catch (error: any) {
     console.error('Doubao API key validation error:', error);
     return NextResponse.json(
-      { valid: false, error: 'Failed to validate Doubao API key' },
+      { valid: false, error: 'Failed to validate server environment' },
       { status: 500 }
     );
   }

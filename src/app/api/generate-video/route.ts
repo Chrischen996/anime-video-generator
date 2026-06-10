@@ -26,10 +26,7 @@ export async function POST(request: NextRequest) {
     if (model === 'doubao') {
       return await handleDoubaoGeneration({ prompt, image_url, resolution, duration, aspect_ratio });
     } else if (model === 'agnes') {
-      const apiKey =
-        request.headers.get('x-agnes-api-key')?.trim() ||
-        process.env.AGNES_API_KEY?.trim() ||
-        '';
+      const apiKey = process.env.AGNES_API_KEY?.trim() || '';
       return await handleAgnesGeneration({ prompt, image_url, resolution, duration, aspect_ratio, apiKey });
     } else {
       return await handleFalAiGeneration({ prompt, image_url, resolution, duration, aspect_ratio });
@@ -70,6 +67,7 @@ async function handleFalAiGeneration({ prompt, image_url, resolution, duration, 
   duration: string;
   aspect_ratio: string;
 }) {
+  const startedAt = Date.now();
   if (!process.env.FAL_API_KEY || process.env.FAL_API_KEY === 'your_fal_api_key_here') {
     return NextResponse.json(
       {
@@ -120,11 +118,19 @@ async function handleFalAiGeneration({ prompt, image_url, resolution, duration, 
 
   // Convert Fal.ai result to our standard format
   const falResult = result as any;
+  if (!isFinalStatus(falResult.status)) {
+    throw new Error(`Fal.ai generation did not finish successfully: ${falResult.status || 'unknown status'}`);
+  }
+  const videoUrl = extractVideoUrl(falResult);
+  if (!videoUrl) {
+    throw new Error('Fal.ai did not return a completed video URL');
+  }
+
   const response: VideoGenerationResponse = {
     success: true,
     data: {
       video: {
-        url: falResult.video?.url || '',
+        url: videoUrl,
         width: falResult.video?.width || 1280,
         height: falResult.video?.height || 720,
         content_type: falResult.video?.content_type || 'video/mp4'
@@ -133,10 +139,11 @@ async function handleFalAiGeneration({ prompt, image_url, resolution, duration, 
       has_nsfw_concepts: falResult.has_nsfw_concepts || [false],
       prompt: falResult.prompt || prompt,
       task_id: falResult.task_id || `fal_${Date.now()}`,
-      status: falResult.status || 'completed'
+      status: 'completed'
     },
   };
 
+  console.log(`Fal.ai generation completed in ${Date.now() - startedAt}ms`);
   return NextResponse.json(response);
 }
 
@@ -147,6 +154,7 @@ async function handleDoubaoGeneration({ prompt, image_url, resolution, duration,
   duration: string;
   aspect_ratio?: string;
 }) {
+  const startedAt = Date.now();
   if (!process.env.DOUBAO_API_KEY || process.env.DOUBAO_API_KEY === 'your_doubao_api_key_here') {
     return NextResponse.json(
       {
@@ -180,17 +188,27 @@ async function handleDoubaoGeneration({ prompt, image_url, resolution, duration,
     }
 
     console.log('Doubao generation result:', result);
+    if (!isFinalStatus(result.status)) {
+      throw new Error(`Doubao generation did not finish successfully: ${result.status || 'unknown status'}`);
+    }
+    const videoUrl = extractVideoUrl(result);
+    if (!videoUrl) {
+      throw new Error('Doubao did not return a completed video URL');
+    }
 
     // Convert Doubao response to match Fal.ai format
     const response: VideoGenerationResponse = {
       success: true,
       data: {
-        video: result.video,
+        video: {
+          ...result.video,
+          url: videoUrl,
+        },
         seed: 0, // Doubao doesn't provide seed
         has_nsfw_concepts: [false],
         prompt: result.prompt,
         task_id: result.task_id,
-        status: result.status,
+        status: 'completed',
         // Pass through additional metadata from Doubao
         resolution: result.resolution,
         duration: result.duration,
@@ -201,6 +219,7 @@ async function handleDoubaoGeneration({ prompt, image_url, resolution, duration,
       },
     };
 
+    console.log(`Doubao generation completed in ${Date.now() - startedAt}ms`);
     return NextResponse.json(response);
   } catch (error: any) {
     console.error('Doubao generation error:', error);
@@ -229,11 +248,12 @@ async function handleAgnesGeneration({ prompt, image_url, resolution, duration, 
   aspect_ratio?: string;
   apiKey?: string;
 }) {
+  const startedAt = Date.now();
   if (!apiKey) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Agnes API key is required. Please configure it in settings or set AGNES_API_KEY in .env.local.',
+        error: 'Agnes API key is required. Please set AGNES_API_KEY in .env.local or the server environment.',
       },
       { status: 400 }
     );
@@ -261,10 +281,11 @@ async function handleAgnesGeneration({ prompt, image_url, resolution, duration, 
       throw new Error('Agnes did not return a task ID');
     }
 
+    const pollingId = result.video_id || result.task_id;
     const finalResult =
       result.status === 'completed'
         ? result
-        : await client.pollVideoCompletion(result.task_id, 24, (progress) => {
+        : await client.pollVideoCompletion(pollingId, 24, (progress) => {
             console.log(`Agnes progress: ${progress}%`);
           });
 
@@ -286,10 +307,12 @@ async function handleAgnesGeneration({ prompt, image_url, resolution, duration, 
         has_nsfw_concepts: [false],
         prompt: finalResult.prompt || prompt,
         task_id: finalResult.task_id,
-        status: finalResult.status,
+        video_id: finalResult.video_id,
+        status: 'completed',
       },
     };
 
+    console.log(`Agnes generation completed in ${Date.now() - startedAt}ms`);
     return NextResponse.json(response);
   } catch (error: any) {
     console.error('Agnes generation error:', error);
@@ -336,4 +359,21 @@ function getAgnesDimensions(resolution: string, aspect_ratio?: string): { width:
   }
 
   return base;
+}
+
+function extractVideoUrl(result: any): string {
+  return (
+    result?.video?.url ||
+    result?.video_url ||
+    result?.videoUrl ||
+    result?.output?.video_url ||
+    result?.output?.videoUrl ||
+    result?.url ||
+    ''
+  );
+}
+
+function isFinalStatus(status?: string): boolean {
+  const normalized = status?.toLowerCase();
+  return !normalized || ['completed', 'succeeded', 'success', 'done'].includes(normalized);
 }
