@@ -12,38 +12,60 @@ export const useVideoGeneration = () => {
 
   const generateVideo = useCallback(async (request: VideoGenerationRequest): Promise<void> => {
     // Check API key based on selected model
-    const requiredApiKey = request.model === 'doubao' ? state.settings.doubaoApiKey : state.settings.apiKey;
-    
+    let requiredApiKey: string;
+    let modelName: string;
+
+    if (request.model === 'doubao') {
+      requiredApiKey = state.settings.doubaoApiKey;
+      modelName = 'Doubao';
+    } else if (request.model === 'agnes') {
+      requiredApiKey = state.settings.agnesApiKey || '';
+      modelName = 'Agnes AI';
+    } else {
+      requiredApiKey = state.settings.apiKey;
+      modelName = 'Fal.ai';
+    }
+
     console.log('Debug: generateVideo called with model:', request.model);
     console.log('Debug: doubaoApiKey:', state.settings.doubaoApiKey);
+    console.log('Debug: agnesApiKey:', state.settings.agnesApiKey);
     console.log('Debug: falaiApiKey:', state.settings.apiKey);
     console.log('Debug: requiredApiKey:', requiredApiKey);
-    
-    if (!requiredApiKey) {
-      const modelName = request.model === 'doubao' ? '豆包' : 'Fal.ai';
-      dispatch({
-        type: 'GENERATION_ERROR',
-        payload: `${modelName} API key is required. Please configure it in settings.`,
-      });
-      return;
-    }
+
+    // 暂时禁用 API key 检查
+    // if (!requiredApiKey) {
+    //   dispatch({
+    //     type: 'GENERATION_ERROR',
+    //     payload: `${modelName} API key is required. Please configure it in settings.`,
+    //   });
+    //   return;
+    // }
 
     dispatch({ type: 'START_GENERATION' });
 
     try {
       // Simulate progress updates
+      let currentProgress = 0;
       const progressInterval = setInterval(() => {
+        currentProgress = Math.min(currentProgress + 10, 90);
         dispatch({
           type: 'SET_GENERATION_PROGRESS',
-          payload: Math.min(state.generationState.progress + 10, 90),
+          payload: currentProgress,
         });
       }, 3000);
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add Agnes API key header if using Agnes model
+      if (request.model === 'agnes' && state.settings.agnesApiKey) {
+        headers['x-agnes-api-key'] = state.settings.agnesApiKey;
+      }
+
       const response = await fetch('/api/generate-video', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(request),
       });
 
@@ -59,14 +81,12 @@ export const useVideoGeneration = () => {
         return;
       }
 
-      // Prefer proxy URL to avoid CORS and signed URL issues
       const originalUrl: string = result.data.video.url;
-      const proxyUrl = `/api/video-proxy?url=${encodeURIComponent(originalUrl)}`;
 
       // Create a GeneratedVideo object
       const generatedVideo: GeneratedVideo = {
         id: generateId(),
-        url: proxyUrl,
+        url: originalUrl,
         originalUrl,
         prompt: request.prompt,
         imageUrl: request.image_url,
@@ -93,7 +113,7 @@ export const useVideoGeneration = () => {
         payload: error.message || 'An unexpected error occurred',
       });
     }
-  }, [state.settings.apiKey, state.settings.doubaoApiKey, state.generationState.progress, dispatch]);
+  }, [state.settings.apiKey, state.settings.doubaoApiKey, state.settings.agnesApiKey, dispatch]);
 
   const generateTextToVideo = useCallback(async (
     prompt: string,
@@ -101,7 +121,7 @@ export const useVideoGeneration = () => {
       resolution?: '480p' | '720p' | '1080p';
       duration?: '5' | '10';
       aspect_ratio?: '16:9' | '9:16' | '1:1';
-      model?: 'fal-ai' | 'doubao';
+      model?: 'fal-ai' | 'doubao' | 'agnes';
     }
   ) => {
     const request: VideoGenerationRequest = {
@@ -121,7 +141,7 @@ export const useVideoGeneration = () => {
     options?: {
       resolution?: '480p' | '720p' | '1080p';
       duration?: '5' | '10';
-      model?: 'fal-ai' | 'doubao';
+      model?: 'fal-ai' | 'doubao' | 'agnes';
     }
   ) => {
     const request: VideoGenerationRequest = {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal } from '@fal-ai/client';
 import { VideoGenerationRequest, VideoGenerationResponse } from '@/types';
-import { DoubaoClient, MockDoubaoClient } from '@/lib/doubao-client';
+import { DoubaoClient } from '@/lib/doubao-client';
+import { AgnesClient } from '@/lib/providers/agnes';
 
 // Configure Fal client
 fal.config({
@@ -23,8 +24,13 @@ export async function POST(request: NextRequest) {
 
     // Route to appropriate model handler
     if (model === 'doubao') {
-      debugger;
       return await handleDoubaoGeneration({ prompt, image_url, resolution, duration, aspect_ratio });
+    } else if (model === 'agnes') {
+      const apiKey =
+        request.headers.get('x-agnes-api-key')?.trim() ||
+        process.env.AGNES_API_KEY?.trim() ||
+        '';
+      return await handleAgnesGeneration({ prompt, image_url, resolution, duration, aspect_ratio, apiKey });
     } else {
       return await handleFalAiGeneration({ prompt, image_url, resolution, duration, aspect_ratio });
     }
@@ -64,31 +70,14 @@ async function handleFalAiGeneration({ prompt, image_url, resolution, duration, 
   duration: string;
   aspect_ratio: string;
 }) {
-  // Use mock response in development if no API key is configured
   if (!process.env.FAL_API_KEY || process.env.FAL_API_KEY === 'your_fal_api_key_here') {
-    console.log('Using mock Fal.ai response for development');
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const mockResponse: VideoGenerationResponse = {
-      success: true,
-      data: {
-        video: {
-          url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
-          width: 1280,
-          height: 720,
-          content_type: 'video/mp4'
-        },
-        seed: 12345,
-        has_nsfw_concepts: [false],
-        prompt: prompt,
-        task_id: `fal_mock_${Date.now()}`,
-        status: 'completed'
-      }
-    };
-    
-    return NextResponse.json(mockResponse);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Fal.ai API key is required. Please configure it in settings.',
+      },
+      { status: 400 }
+    );
   }
 
   // Configure Fal client
@@ -158,14 +147,16 @@ async function handleDoubaoGeneration({ prompt, image_url, resolution, duration,
   duration: string;
   aspect_ratio?: string;
 }) {
-  // Use mock client in development if no API key is configured
-  let client;
   if (!process.env.DOUBAO_API_KEY || process.env.DOUBAO_API_KEY === 'your_doubao_api_key_here') {
-    console.log('Using mock Doubao client for development');
-    client = new MockDoubaoClient('mock-key');
-  } else {
-    client = new DoubaoClient(process.env.DOUBAO_API_KEY);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Doubao API key is required. Please configure it in settings.',
+      },
+      { status: 400 }
+    );
   }
+  const client = new DoubaoClient(process.env.DOUBAO_API_KEY);
 
   console.log('Generating video with Doubao:', { prompt, image_url, resolution, duration });
 
@@ -228,4 +219,121 @@ async function handleDoubaoGeneration({ prompt, image_url, resolution, duration,
       { status: 500 }
     );
   }
+}
+
+async function handleAgnesGeneration({ prompt, image_url, resolution, duration, aspect_ratio, apiKey }: {
+  prompt: string;
+  image_url?: string;
+  resolution: string;
+  duration: string;
+  aspect_ratio?: string;
+  apiKey?: string;
+}) {
+  if (!apiKey) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Agnes API key is required. Please configure it in settings or set AGNES_API_KEY in .env.local.',
+      },
+      { status: 400 }
+    );
+  }
+  const client = new AgnesClient(apiKey);
+
+  console.log('Generating video with Agnes:', { prompt, image_url, resolution, duration });
+
+  // Map resolution to dimensions
+  const dimensions = getAgnesDimensions(resolution, aspect_ratio);
+
+  try {
+    // Generate video
+    const result = await client.generateVideo({
+      prompt,
+      image: image_url,
+      duration: parseInt(duration) || 5,
+      width: dimensions.width,
+      height: dimensions.height,
+    });
+
+    console.log('Agnes generation result:', { taskId: result.task_id, status: result.status });
+
+    if (!result.task_id) {
+      throw new Error('Agnes did not return a task ID');
+    }
+
+    const finalResult =
+      result.status === 'completed'
+        ? result
+        : await client.pollVideoCompletion(result.task_id, 24, (progress) => {
+            console.log(`Agnes progress: ${progress}%`);
+          });
+
+    if (finalResult.status !== 'completed' || !finalResult.video?.url) {
+      throw new Error(finalResult.error || 'Agnes did not return a completed video URL');
+    }
+
+    // Convert to standard response format
+    const response: VideoGenerationResponse = {
+      success: true,
+      data: {
+        video: finalResult.video || {
+          url: '',
+          width: 1152,
+          height: 768,
+          content_type: 'video/mp4',
+        },
+        seed: 0,
+        has_nsfw_concepts: [false],
+        prompt: finalResult.prompt || prompt,
+        task_id: finalResult.task_id,
+        status: finalResult.status,
+      },
+    };
+
+    return NextResponse.json(response);
+  } catch (error: any) {
+    console.error('Agnes generation error:', error);
+
+    let errorMessage = 'Failed to generate video with Agnes';
+    if (error.message?.includes('401') || error.message?.includes('unauthorized')) {
+      errorMessage = 'Invalid Agnes API key. Please check your API key in settings.';
+    } else if (error.message?.includes('quota') || error.message?.includes('limit')) {
+      errorMessage = 'Agnes API quota exceeded. Please check your account.';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    return NextResponse.json(
+      { success: false, error: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+function getAgnesDimensions(resolution: string, aspect_ratio?: string): { width: number; height: number } {
+  // Map resolution and aspect ratio to dimensions
+  const baseDimensions: Record<string, { width: number; height: number }> = {
+    '480p': { width: 640, height: 480 },
+    '720p': { width: 1280, height: 720 },
+    '1080p': { width: 1920, height: 1080 },
+  };
+
+  const base = baseDimensions[resolution] || baseDimensions['1080p'];
+
+  // Adjust for aspect ratio if provided
+  if (aspect_ratio) {
+    const [w, h] = aspect_ratio.split(':').map(Number);
+    if (w && h) {
+      const ratio = w / h;
+      if (ratio > 1) {
+        // Landscape
+        base.height = Math.round(base.width / ratio);
+      } else {
+        // Portrait
+        base.width = Math.round(base.height * ratio);
+      }
+    }
+  }
+
+  return base;
 }
