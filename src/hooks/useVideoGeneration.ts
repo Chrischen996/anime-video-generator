@@ -16,27 +16,20 @@ export const useVideoGeneration = () => {
     dispatch({ type: 'START_GENERATION' });
 
     try {
-      // Simulate progress updates
-      let currentProgress = 0;
-      const progressInterval = setInterval(() => {
-        currentProgress = Math.min(currentProgress + 10, 90);
-        dispatch({
-          type: 'SET_GENERATION_PROGRESS',
-          payload: currentProgress,
-        });
-      }, 3000);
-
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
+
+      // Add Agnes API key header if using Agnes model
+      if (request.model === 'agnes' && state.settings.agnesApiKey) {
+        headers['x-agnes-api-key'] = state.settings.agnesApiKey;
+      }
 
       const response = await fetch('/api/generate-video', {
         method: 'POST',
         headers,
         body: JSON.stringify(request),
       });
-
-      clearInterval(progressInterval);
 
       const result = await response.json();
 
@@ -46,6 +39,44 @@ export const useVideoGeneration = () => {
           payload: result.error || 'Failed to generate video',
         });
         return;
+      }
+
+      // For Agnes model, poll for progress
+      if (request.model === 'agnes' && result.data?.video_id) {
+        const pollProgress = async () => {
+          while (true) {
+            try {
+              const statusResponse = await fetch('/api/agnes-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  video_id: result.data.video_id,
+                  api_key: state.settings.agnesApiKey,
+                }),
+              });
+
+              const statusData = await statusResponse.json();
+
+              if (statusData.success) {
+                dispatch({
+                  type: 'SET_GENERATION_PROGRESS',
+                  payload: statusData.data.progress,
+                });
+
+                if (statusData.data.status === 'completed') {
+                  break;
+                }
+              }
+            } catch (error) {
+              console.error('Progress polling error:', error);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        };
+
+        // Start polling in background
+        pollProgress().catch(console.error);
       }
 
       const originalUrl: string = result.data.video.url;
@@ -98,6 +129,7 @@ export const useVideoGeneration = () => {
       duration: options?.duration || state.settings.defaultDuration,
       aspect_ratio: options?.aspect_ratio || state.settings.defaultAspectRatio,
       model: options?.model || state.settings.defaultModel,
+      mode: 'ti2vid',
     };
 
     await generateVideo(request);

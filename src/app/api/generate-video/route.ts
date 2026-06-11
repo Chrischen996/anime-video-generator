@@ -26,7 +26,10 @@ export async function POST(request: NextRequest) {
     if (model === 'doubao') {
       return await handleDoubaoGeneration({ prompt, image_url, resolution, duration, aspect_ratio });
     } else if (model === 'agnes') {
-      const apiKey = process.env.AGNES_API_KEY?.trim() || '';
+      const apiKey =
+        request.headers.get('x-agnes-api-key')?.trim() ||
+        process.env.AGNES_API_KEY?.trim() ||
+        '';
       return await handleAgnesGeneration({ prompt, image_url, resolution, duration, aspect_ratio, apiKey });
     } else {
       return await handleFalAiGeneration({ prompt, image_url, resolution, duration, aspect_ratio });
@@ -266,49 +269,51 @@ async function handleAgnesGeneration({ prompt, image_url, resolution, duration, 
   const dimensions = getAgnesDimensions(resolution, aspect_ratio);
 
   try {
+    const parsedDuration = parseInt(duration, 10) || 5;
+
     // Generate video
     const result = await client.generateVideo({
       prompt,
       image: image_url,
-      duration: parseInt(duration) || 5,
+      duration: parsedDuration,
       width: dimensions.width,
       height: dimensions.height,
     });
 
-    console.log('Agnes generation result:', { taskId: result.task_id, status: result.status });
+    console.log('Agnes generation result:', { videoId: result.video_id, status: result.status });
 
-    if (!result.task_id) {
-      throw new Error('Agnes did not return a task ID');
+    if (!result.video_id) {
+      throw new Error('Agnes did not return a video ID');
     }
 
-    const pollingId = result.video_id || result.task_id;
-    const finalResult =
-      result.status === 'completed'
-        ? result
-        : await client.pollVideoCompletion(pollingId, 24, (progress) => {
-            console.log(`Agnes progress: ${progress}%`);
-          });
+    // Poll for completion until status === 'completed'
+    const finalResult = await client.pollVideoCompletion(result.video_id, (progress) => {
+      console.log(`Agnes progress: ${progress}%`);
+    });
 
-    if (finalResult.status !== 'completed' || !finalResult.video?.url) {
-      throw new Error(finalResult.error || 'Agnes did not return a completed video URL');
+    if (!finalResult.video_url) {
+      throw new Error('Agnes did not return a video URL');
     }
 
     // Convert to standard response format
     const response: VideoGenerationResponse = {
       success: true,
       data: {
-        video: finalResult.video || {
-          url: '',
-          width: 1152,
-          height: 768,
+        video: {
+          url: finalResult.video_url,
+          width: dimensions.width,
+          height: dimensions.height,
           content_type: 'video/mp4',
         },
         seed: 0,
         has_nsfw_concepts: [false],
-        prompt: finalResult.prompt || prompt,
+        prompt,
         task_id: finalResult.task_id,
         video_id: finalResult.video_id,
         status: 'completed',
+        duration: parsedDuration,
+        ratio: aspect_ratio,
+        resolution,
       },
     };
 
@@ -341,7 +346,8 @@ function getAgnesDimensions(resolution: string, aspect_ratio?: string): { width:
     '1080p': { width: 1920, height: 1080 },
   };
 
-  const base = baseDimensions[resolution] || baseDimensions['1080p'];
+  const selectedBase = baseDimensions[resolution] || baseDimensions['1080p'];
+  const base = { ...selectedBase };
 
   // Adjust for aspect ratio if provided
   if (aspect_ratio) {

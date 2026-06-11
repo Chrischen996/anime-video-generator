@@ -65,8 +65,8 @@ const VideoGenerator: React.FC = () => {
 
     if (generationType === 'text-to-video') {
       await generateTextToVideo(prompt, {
-        ...baseRequest,
         aspect_ratio: aspectRatio,
+        ...baseRequest,
       });
     } else if (generationType === 'image-to-video' && imagePreview) {
       // For image-to-video, we need to upload the image first
@@ -78,6 +78,7 @@ const VideoGenerator: React.FC = () => {
     }
   };
 
+  const isAgnesTextMode = selectedModel === 'agnes' && generationType === 'text-to-video';
   const canGenerate = hasValidApiKey(selectedModel) &&
     prompt.trim().length > 0 &&
     (generationType === 'text-to-video' || (generationType === 'image-to-video' && uploadedImage));
@@ -153,7 +154,7 @@ const VideoGenerator: React.FC = () => {
       </div>
 
       {/* Image Upload (for image-to-video) */}
-      {generationType === 'image-to-video' && (
+      {generationType === 'image-to-video' && selectedModel !== 'agnes' && (
         <div className="space-y-4">
           <FileUpload
             label="上传图片"
@@ -178,6 +179,15 @@ const VideoGenerator: React.FC = () => {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {isAgnesTextMode && (
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+          <div className="font-medium">Agnes 文生视频</div>
+          <div className="mt-1">
+            直接输入提示词即可生成。系统会自动使用 Agnes 当前支持的文生视频模式发起请求，并在生成完成后返回可播放的视频链接。
+          </div>
         </div>
       )}
 

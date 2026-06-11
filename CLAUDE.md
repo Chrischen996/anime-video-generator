@@ -50,6 +50,19 @@ This is a Next.js 15 application with App Router that generates anime-style vide
 - Mock client for development without API keys
 - API key validation endpoint
 
+#### Agnes AI Video V2.0 Integration (`src/lib/providers/agnes.ts`)
+- Direct HTTP client for Agnes API (`https://apihub.agnes-ai.com`)
+- **Task Creation**: `POST /v1/videos` with model, prompt, dimensions, frame settings
+- **Status Polling**: `GET /agnesapi?video_id=xxx` returns progress (0-100) and video URL
+- **Progress Tracking**: Real-time progress updates from Agnes API (no simulation)
+- **Frontend Progress**: `/api/agnes-status` endpoint for polling progress from client
+- **Key Features**:
+  - Parameterized model selection (default: `agnes-video-v2.0`)
+  - Support for both text-to-video and image-to-video
+  - No timeout limit - polls until `status === 'completed'`
+  - Real-time progress display based on API response
+- **API Key**: Passed via `x-agnes-api-key` header or `AGNES_API_KEY` env var
+
 ### State Management (`src/lib/context.tsx`)
 - React Context + useReducer pattern
 - Persists settings and videos to localStorage
@@ -58,23 +71,75 @@ This is a Next.js 15 application with App Router that generates anime-style vide
 
 ### Development Workflow
 
-1. **API Key Setup**: Configure FAL_API_KEY and/or DOUBAO_API_KEY in `.env.local`
+1. **API Key Setup**: Configure in `.env.local`:
+   - `FAL_API_KEY` - Fal.ai API key
+   - `DOUBAO_API_KEY` - ByteDance Doubao API key
+   - `AGNES_API_KEY` - Agnes AI API key (optional, can be set in Settings UI)
 2. **Development**: Use `npm run dev` (Turbopack) or `npm run dev:legacy` (standard)
 3. **Testing**: Mock clients available when no API keys are configured
 4. **Linting**: ESLint configured with Next.js core web vitals and TypeScript rules
 
+### API Routes Summary
+
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `/api/generate-video` | POST | Create video generation task (routes to Fal.ai/Doubao/Agnes) |
+| `/api/validate-key` | POST | Validate Fal.ai API key |
+| `/api/validate-doubao-key` | POST | Validate Doubao API key |
+| `/api/validate-agnes-key` | POST | Validate Agnes API key |
+| `/api/agnes-status` | POST | Query Agnes video generation progress (for frontend polling) |
+| `/api/video-proxy` | GET | Proxy video URLs to avoid CORS issues |
+
 ### Security Notes
 - API keys are stored in client-side state and localStorage (not committed)
 - Environment variables supported via `.env.local`
+- Agnes API key can also be passed via `x-agnes-api-key` header from Settings UI
 - Input validation on API routes
 - CORS protection through video proxy endpoints
 
+### Agnes Integration Implementation Notes
+
+**Request Parameters** (`POST /v1/videos`):
+```json
+{
+  "model": "agnes-video-v2.0",
+  "prompt": "user input",
+  "width": 1152,
+  "height": 768,
+  "num_frames": 121,    // duration * 24 + 1
+  "frame_rate": 24,
+  "image": "optional url for image-to-video"
+}
+```
+
+**Response Fields**:
+- Task Creation: `{ id, video_id, task_id, status: 'queued', progress: 0 }`
+- Status Query: `{ id, status: 'in_progress'|'completed'|'failed', progress: 0-100, remixed_from_video_id: 'video_url' }`
+- Status Mapping: `queued/processing/in_progress/pending` → `'processing'`, `completed/succeeded` → `'completed'`, `failed/error` → `'failed'`
+
+**Frontend Progress Polling**:
+- Route: `/api/agnes-status`
+- Interval: 2 seconds
+- Returns: `{ status, progress, video_url, error }`
+- Stops when: `status === 'completed'`
+
 ### Video Generation Flow
-1. Client → API Route → AI Service (Fal.ai/Doubao)
+
+#### For Fal.ai and Doubao:
+1. Client → API Route → AI Service
 2. Task creation with automatic polling
-3. Progress simulation during generation
-4. Video URL proxying to avoid CORS issues
-5. Storage in gallery with metadata persistence[byterover-mcp]
+3. Storage in gallery with metadata persistence
+
+#### For Agnes AI (Real-time Progress):
+1. User clicks "Generate" → `POST /api/generate-video` with model='agnes'
+2. Backend creates task via `POST /v1/videos` → returns `video_id`
+3. Backend polls `GET /agnesapi?video_id=xxx` until `status === 'completed'`
+4. Frontend simultaneously polls `POST /api/agnes-status` every 2 seconds
+5. Frontend displays real-time progress (0% → 100%) from Agnes API response
+6. When `status === 'completed'`, returns `remixed_from_video_id` (video URL)
+7. Video stored in gallery with metadata
+
+**Key Difference**: Agnes uses real API progress values instead of simulated progress
 
 # important 
 always use byterover-retrieve-knowledge tool to get the related context before any tasks 

@@ -3,30 +3,23 @@
 
 export interface AgnesVideoRequest {
   prompt: string;
-  image?: string;           // Single image URL for Image-to-Video
+  image?: string;
   model?: string;
-  duration?: number;        // Seconds (default: 5)
+  duration?: number;
   width?: number;
   height?: number;
 }
 
 export interface AgnesVideoResponse {
   task_id: string;
-  video_id?: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  video_id: string;
+  status: 'processing' | 'completed' | 'failed';
   progress?: number;
-  video?: {
-    url: string;
-    width: number;
-    height: number;
-    content_type: string;
-  };
+  video_url?: string;
   error?: string;
-  prompt?: string;
 }
 
-const AGNES_API_BASE = 'https://apihub.agnes-ai.com/v1';
-const AGNES_MOCK_VIDEO_URL = 'https://storage.googleapis.com/agnes-aigc/aigc/videos/2026/06/03/video_mocked.mp4';
+const AGNES_API_BASE = 'https://apihub.agnes-ai.com';
 
 export class AgnesClient {
   private apiKey: string;
@@ -35,47 +28,31 @@ export class AgnesClient {
     this.apiKey = apiKey;
   }
 
+  /**
+   * Create video generation task
+   * POST /v1/videos
+   */
   async generateVideo(request: AgnesVideoRequest): Promise<AgnesVideoResponse> {
-    const {
-      prompt,
-      image,
-      model = 'agnes-video-v2.0',
-      duration = 5,
-      width = 1152,
-      height = 768,
-    } = request;
+    const { prompt, image, model = 'agnes-video-v2.0', duration = 5, width = 1152, height = 768 } = request;
 
-    if (process.env.NODE_ENV !== 'production' && process.env.AGNES_MOCK_RESPONSE === 'true') {
-      return {
-        task_id: `task_mock_${Date.now()}`,
-        status: 'completed',
-        video: {
-          url: AGNES_MOCK_VIDEO_URL,
-          width,
-          height,
-          content_type: 'video/mp4',
-        },
-        prompt,
-      };
-    }
-
-    const numFrames = Math.floor(duration * 24) + 1;
+    // Calculate num_frames: duration(s) * frame_rate + 1
+    // For 5s video: 5 * 24 + 1 = 121 frames
+    const num_frames = duration * 24 + 1;
 
     const body: any = {
       model,
       prompt,
       height,
       width,
-      num_frames: numFrames,
+      num_frames,
       frame_rate: 24,
     };
 
-    // Image-to-Video: single image
     if (image) {
       body.image = image;
     }
 
-    const response = await fetch(`${AGNES_API_BASE}/videos`, {
+    const response = await fetch(`${AGNES_API_BASE}/v1/videos`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
@@ -85,92 +62,59 @@ export class AgnesClient {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}`);
     }
 
     const result = await response.json();
 
-    const status = this.mapStatus(result.status);
-    const taskId = result.task_id || result.id || '';
-    const videoId = result.video_id || result.videoId || '';
-    const videoUrl =
-      result.video?.url ||
-      result.video_url ||
-      result.videoUrl ||
-      result.url ||
-      result.output?.video_url ||
-      '';
-    const dimensions = this.parseSize(result.size);
-
     return {
-      task_id: taskId,
-      video_id: videoId || undefined,
-      status,
-      video: status === 'completed' && videoUrl ? {
-        url: videoUrl,
-        width: dimensions?.width || result.width || width,
-        height: dimensions?.height || result.height || height,
-        content_type: 'video/mp4',
-      } : undefined,
-      error: this.extractErrorMessage(result.error),
-      prompt,
+      task_id: result.task_id || result.id,
+      video_id: result.video_id,
+      status: this.mapStatus(result.status),
+      progress: result.progress ?? 0,
     };
   }
 
-  async getVideoResult(taskId: string): Promise<AgnesVideoResponse> {
-    // 使用任务 ID 查询结果
-    const response = await fetch(`${AGNES_API_BASE}/videos/${taskId}`, {
+  /**
+   * Get video generation result
+   * GET /agnesapi?video_id=xxx
+   */
+  async getVideoResult(videoId: string): Promise<AgnesVideoResponse> {
+    const response = await fetch(`${AGNES_API_BASE}/agnesapi?video_id=${videoId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}`);
     }
 
     const result = await response.json();
 
-    // Map Agnes status to our format
-    const status = this.mapStatus(result.status);
-    const videoId = result.video_id || result.videoId || '';
-
-    const videoUrl =
-      result.video?.url ||
-      result.video_url ||
-      result.videoUrl ||
-      result.url ||
-      result.output?.video_url ||
-      '';
-    const dimensions = this.parseSize(result.size);
-
     return {
-      task_id: taskId,
-      video_id: videoId || undefined,
-      status,
-      progress: typeof result.progress === 'number' ? result.progress : undefined,
-      video: status === 'completed' && videoUrl ? {
-        url: videoUrl,
-        width: dimensions?.width || result.width || 1152,
-        height: dimensions?.height || result.height || 768,
-        content_type: 'video/mp4',
-      } : undefined,
-      error: status === 'failed' ? this.extractErrorMessage(result.error) : undefined,
+      task_id: result.id || result.task_id,
+      video_id: videoId,
+      status: this.mapStatus(result.status),
+      progress: result.progress ?? 0,
+      video_url: result.remixed_from_video_id,
+      error: result.error,
     };
   }
 
+  /**
+   * Poll until video generation completes
+   */
   async pollVideoCompletion(
-    taskId: string,
-    maxAttempts: number = 24,
+    videoId: string,
     onProgress?: (progress: number) => void,
   ): Promise<AgnesVideoResponse> {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    while (true) {
       try {
-        const result = await this.getVideoResult(taskId);
+        const result = await this.getVideoResult(videoId);
 
         if (result.progress !== undefined && onProgress) {
           onProgress(result.progress);
@@ -182,36 +126,23 @@ export class AgnesClient {
           throw new Error(result.error || 'Video generation failed');
         }
 
-        console.log(`Agnes task ${taskId} status: ${result.status}, progress: ${result.progress ?? 0}%, attempt ${attempt + 1}/${maxAttempts}`);
+        console.log(`Agnes video ${videoId} status: ${result.status}, progress: ${result.progress}%`);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        console.log(`Agnes poll error: ${message}, attempt ${attempt + 1}/${maxAttempts}`);
+        console.log(`Agnes poll error: ${message}`);
 
-        const lowerMessage = message.toLowerCase();
-        const shouldStopPolling =
-          lowerMessage.includes('401') ||
-          lowerMessage.includes('403') ||
-          lowerMessage.includes('unauthorized') ||
-          lowerMessage.includes('forbidden') ||
-          lowerMessage.includes('invalid api key') ||
-          lowerMessage.includes('video generation failed');
-
-        if (shouldStopPolling) {
+        if (message.includes('401') || message.includes('403') || message.includes('unauthorized')) {
           throw error;
         }
       }
 
-      // Wait 5 seconds before next poll
       await new Promise(resolve => setTimeout(resolve, 5000));
     }
-
-    throw new Error('Video generation timeout after 2 minutes');
   }
 
   async validateApiKey(): Promise<boolean> {
     try {
-      // Test with a minimal request
-      const response = await fetch(`${AGNES_API_BASE}/videos`, {
+      const response = await fetch(`${AGNES_API_BASE}/v1/videos`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
@@ -220,70 +151,29 @@ export class AgnesClient {
         body: JSON.stringify({
           model: 'agnes-video-v2.0',
           prompt: 'test',
-          num_frames: 24,
+          num_frames: 25,
           frame_rate: 24,
           width: 640,
           height: 480,
         }),
       });
 
-      // 400 means key is valid but request is invalid (expected)
       return response.ok || response.status === 400 || response.status === 409;
     } catch {
       return false;
     }
   }
 
-  private mapStatus(agnesStatus?: string): 'pending' | 'processing' | 'completed' | 'failed' {
+  private mapStatus(agnesStatus?: string): 'processing' | 'completed' | 'failed' {
     switch (agnesStatus?.toLowerCase()) {
-      case 'succeeded':
       case 'completed':
-      case 'done':
-      case 'success':
+      case 'succeeded':
         return 'completed';
-      case 'processing':
-      case 'running':
-      case 'pending':
-      case 'in_progress':
-        return 'processing';
       case 'failed':
       case 'error':
         return 'failed';
       default:
         return 'processing';
     }
-  }
-
-  private extractErrorMessage(error: unknown): string | undefined {
-    if (!error) {
-      return undefined;
-    }
-
-    if (typeof error === 'string') {
-      return error;
-    }
-
-    if (typeof error === 'object' && error !== null && 'message' in error) {
-      const message = (error as { message?: unknown }).message;
-      return typeof message === 'string' ? message : undefined;
-    }
-
-    return undefined;
-  }
-
-  private parseSize(size?: string): { width: number; height: number } | undefined {
-    if (!size) {
-      return undefined;
-    }
-
-    const match = size.match(/^(\d+)x(\d+)$/i);
-    if (!match) {
-      return undefined;
-    }
-
-    return {
-      width: Number(match[1]),
-      height: Number(match[2]),
-    };
   }
 }

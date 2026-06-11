@@ -28,6 +28,7 @@ export interface VideoGenerationRequest {
   duration?: '5' | '10';
   aspect_ratio?: '16:9' | '9:16' | '1:1';
   model?: 'fal-ai' | 'doubao' | 'agnes';
+  mode?: 'ti2vid' | 'keyframes';
 }
 
 export interface VideoGenerationResponse {
